@@ -65,7 +65,7 @@ def main():
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     visualizer = Visualizer()
-    data = load_json('/Users/cmazzoleni/Documents/GitHub/Cuboidabstractionviaseg/json_files/ffe1c487f7b9909bfebad4f49b26ec52.json')
+    data = load_json('/Users/cmazzoleni/Documents/GitHub/Cuboidabstractionviaseg/output_folder/table/ffe1c487f7b9909bfebad4f49b26ec52.json')
 
     for i, component in enumerate(data["components"]):
         scale = np.array(component["scale"])
