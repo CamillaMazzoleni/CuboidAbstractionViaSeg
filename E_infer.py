@@ -20,6 +20,32 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)       
 torch.cuda.manual_seed_all(seed) 
 
+def save_cubes_json(scale, rotate, trans, exists, save_path, names):
+    batch_size = scale.shape[0]
+    num_el = scale.shape[1]
+    func_Sigmoid = nn.Sigmoid()
+    exists = func_Sigmoid(exists.squeeze(-1)).detach().cpu().numpy()
+    
+    for el in range(batch_size):
+        components = []
+        for k in range(num_el):
+            if exists[el,k] > 0.5:
+                component = {}
+                component['scale'] = scale[el,k,:].detach().cpu().numpy().tolist()
+                rot3x3 = rotate[el,k,:].detach().cpu().numpy()
+                r = R.from_matrix(rot3x3)
+                
+                # convert from 3 x3 into euler angles
+                component['rotation'] = rot3x3.tolist()
+                component['position'] = trans[el,k,:].detach().cpu().numpy().tolist()
+                component['epsilon1'] = 0.1
+                component['epsilon2'] = 0.1
+                components.append(component)
+        res = {}
+        res['components'] = components
+        json.dump(res, open(save_path + names[el] + '.json', 'w'))
+
+
 def main(args):
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.E_CUDA)
 
@@ -64,6 +90,7 @@ def main(args):
                                     num_workers=4, 
                                     pin_memory=True)
         infer(args, cur_dataloader, Network, hypara, 'train', batch_size, color)
+       
 
 
 def infer(args, cur_dataloader, Network, hypara, train_val_test, batch_size, color):
@@ -84,7 +111,11 @@ def infer(args, cur_dataloader, Network, hypara, train_val_test, batch_size, col
             utils_pt.visualize_cubes(vertices_pred, faces_pred, color, save_path, _, 'pred', names)
             utils_pt.visualize_cubes_masked(vertices_pred, faces_pred, color, outdict['assign_matrix'], save_path, _, 'pred', names)
             utils_pt.visualize_cubes_masked_pred(vertices_pred, faces_pred, color, outdict['exist'], save_path, _, names)
+            utils_pt.save_cubes_json(outdict['scale'], outdict['rotate'],  outdict['pc_assign_mean'], outdict['exist'], save_path, names)
             print(j)
+
+    
+    print("Training finished")
 
 
 if __name__ == "__main__":
